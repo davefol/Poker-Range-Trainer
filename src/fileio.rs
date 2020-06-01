@@ -13,7 +13,6 @@ pub fn load_ranges() -> Vec<range::Range> {
             if let Ok(data) = serde_json::from_str(&contents) {
                 return data;
             } else {
-                dbg!(serde_json::from_str::<Vec<range::Range>>(&contents));
                 dbg!("Couldn't parse json");
             }
         } else {
@@ -33,6 +32,7 @@ pub fn save_ranges(ranges: &Vec<range::Range>) -> Result<(), Box<dyn Error>> {
         let path = data_dir.as_path();
         let mut file = fs::OpenOptions::new()
             .write(true)
+            .truncate(true)
             .create(true)
             .open(path)?;
             

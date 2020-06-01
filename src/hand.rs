@@ -5,7 +5,7 @@ use rand::{
 };
 use serde::{Serialize, Deserialize};
 
-use crate::card::{Card, Gap};
+use crate::card::{Card, Gap, DisplaySuit};
 
 #[derive(Eq, PartialEq, Hash, Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct Hand {
@@ -48,6 +48,20 @@ impl Hand {
     }
 }
 
+impl From<Hand> for (&'static [u8], &'static[u8]) {
+    fn from(hand: Hand) ->  (&'static [u8], &'static[u8] ){
+        let mut suits = vec![DisplaySuit::Hearts, DisplaySuit::Clubs, DisplaySuit::Spades, DisplaySuit::Diamonds];
+        let first_suit = suits.remove(rand::thread_rng().gen_range(0,4));
+        let second_suit = match hand.suited {
+            Suit::Suited => first_suit,
+            Suit::Off => suits.remove(rand::thread_rng().gen_range(0,3))
+        };
+        let first_svg = hand.first.svg_bytes(Some(first_suit));
+        let second_svg = hand.second.svg_bytes(Some(second_suit));
+        (first_svg, second_svg)
+    }
+}
+
 impl fmt::Display for Hand {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.first == self.second {
@@ -60,11 +74,12 @@ impl fmt::Display for Hand {
 
 impl Distribution<Hand> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Hand {
-        let first: Card = rand::random();
-        let second: Card = rand::random();
+        let a: Card = rand::random();
+        let b: Card = rand::random();
+        let (first, second) = (Card::max(a,b), Card::min(a,b));
         let suited = {
             if first == second {
-                Suit::Suited
+                Suit::Off
             } else {
                 match rng.gen_range(0,2) {
                     0 => Suit::Off,

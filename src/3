@@ -1,12 +1,10 @@
-use rand::Rng;
-
 use crate::messages::{
     Message
 };
 use crate::range::Range;
 
 use crate::questions::{
-    QuestionWrapper, BinaryRangeQuestion, QuestionAnswer, Question, FoldEquity,
+    QuestionWrapper, BinaryRangeQuestion, QuestionAnswer, Question
 };
 
 
@@ -28,9 +26,9 @@ impl StudyScreen {
             0 => Some(QuestionWrapper::BinaryRangeQuestion(BinaryRangeQuestion::new(ranges))),
             1 => Some(QuestionWrapper::FoldEquity(FoldEquity::new())),
             _ => unreachable!()
-        };
+        }
         Self {
-            question: question,
+            question: Some(QuestionWrapper::BinaryRangeQuestion(BinaryRangeQuestion::new(ranges))),
         }
     }
 
@@ -52,12 +50,6 @@ impl StudyScreen {
     }
 
     pub fn new_question(&mut self, ranges: &Vec<Range>) {
-        let question_choice = rand::thread_rng().gen_range(0,2);
-        let question = match question_choice {
-            0 => Some(QuestionWrapper::BinaryRangeQuestion(BinaryRangeQuestion::new(ranges))),
-            1 => Some(QuestionWrapper::FoldEquity(FoldEquity::new())),
-            _ => unreachable!()
-        };
-        self.question = question; 
+        self.question = Some(QuestionWrapper::BinaryRangeQuestion(BinaryRangeQuestion::new(ranges)));
     }
 }

@@ -1,6 +1,7 @@
 use crate::hand::Hand;
 use crate::range::Range;
 use crate::ranges_screen::ActiveRange;
+use crate::study_screen::StudyMessage;
 
 #[derive(Debug, Clone,)]
 pub enum Message {
@@ -25,8 +26,3 @@ pub enum RangesMessage {
     RangesHaveBeenSaved,
 }
 
-#[derive(Debug, Clone)]
-pub enum StudyMessage {
-    Answer(bool),
-    NewQuestion(Vec<Range>),
-}

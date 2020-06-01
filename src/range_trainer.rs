@@ -7,7 +7,7 @@ use crate::{
 };
 
 use crate::messages::{
-    Message, RangesMessage, StudyMessage,
+    Message, RangesMessage,
 };
 
 use crate::ranges_screen::ActiveRange;
@@ -18,6 +18,10 @@ use iced::{
     Command,
     Element,
     Column
+};
+
+use iced_native::{
+    Align
 };
 
 enum ScreenType {
@@ -67,7 +71,10 @@ impl Application for RangeTrainer {
     fn update(&mut self, _message: Self::Message) -> Command<Self::Message> {
         match _message {
             Message::SaveRanges => { 
-                fileio::save_ranges(&self.ranges); 
+                match fileio::save_ranges(&self.ranges) {
+                    Ok(_) => {},
+                    Err(e) => {dbg!(e);}
+                }
                 self.ranges_screen.update(RangesMessage::RangesHaveBeenSaved);
             },
             Message::ViewStudyScreen => { self.current_screen = ScreenType::Study; }
@@ -77,7 +84,10 @@ impl Application for RangeTrainer {
                 self.ranges_screen.set_range(self.ranges.len(), new_range.clone());
                 self.ranges.push(new_range); 
                 self.ranges_screen.update(RangesMessage::UpdateSelectRangeButtons(self.ranges.to_vec()));
-                fileio::save_ranges(&self.ranges);
+                match fileio::save_ranges(&self.ranges) {
+                    Ok(_) => {},
+                    Err(e) => {dbg!(e);}
+                }
             },
             Message::RangeSelected(range_id) => {
                 match self.ranges.get(range_id) {
@@ -89,13 +99,17 @@ impl Application for RangeTrainer {
             }
             Message::RangesScreen(ranges_message) => { self.ranges_screen.update(ranges_message) },
             Message::StudyScreen(study_message) => { self.study_screen.update(study_message) }, 
-            Message::RequestNewQuestion => { self.study_screen.update(StudyMessage::NewQuestion(self.ranges.clone()))},
+            Message::RequestNewQuestion => { self.study_screen.new_question(&self.ranges)},
             Message::SaveRange(Some(active_range)) => {
                 if let Some(r) = self.ranges.get_mut(active_range.id) {
                     *r = active_range.range.clone();
                     self.ranges_screen.update(RangesMessage::UpdateSelectRangeButtons(self.ranges.to_vec()));
-                    fileio::save_ranges(&self.ranges);
+                    match fileio::save_ranges(&self.ranges) {
+                        Ok(_) => {},
+                        Err(e) => {dbg!(e);}
+                    }
                     self.ranges_screen.update(RangesMessage::RangesHaveBeenSaved);
+                    self.study_screen = study_screen::StudyScreen::new(&self.ranges);
                 }
             },
             Message::SaveRange(None) => {},
@@ -109,7 +123,10 @@ impl Application for RangeTrainer {
                 }
 
                 self.ranges_screen.update(RangesMessage::UpdateSelectRangeButtons(self.ranges.to_vec()));
-                fileio::save_ranges(&self.ranges);
+                match fileio::save_ranges(&self.ranges) {
+                    Ok(_) => {},
+                    Err(e) => {dbg!(e);}
+                }
                 self.ranges_screen.update(RangesMessage::RangesHaveBeenSaved);
             },
             Message::DeleteRange(None) => {},
@@ -119,7 +136,10 @@ impl Application for RangeTrainer {
                 self.ranges_screen.active_range = Some(ActiveRange::new(self.ranges.len(), copied_range.clone()));
                 self.ranges.push(copied_range);
                 self.ranges_screen.update(RangesMessage::UpdateSelectRangeButtons(self.ranges.to_vec()));
-                fileio::save_ranges(&self.ranges);
+                match fileio::save_ranges(&self.ranges) {
+                    Ok(_) => {},
+                    Err(e) => {dbg!(e);}
+                }
                 self.ranges_screen.update(RangesMessage::RangesHaveBeenSaved);
             },
             Message::CopyRange(None) => {}
@@ -129,6 +149,9 @@ impl Application for RangeTrainer {
 
     fn view(&mut self) -> Element<Self::Message> {
         Column::new()
+            .padding(8)
+            .spacing(8)
+            .align_items(Align::Center)
             .push(self.toolbar.view())
             .push(match &self.current_screen {
                 ScreenType::Study => self.study_screen.view(),

@@ -12,7 +12,7 @@ use iced::{Column, Row, button, Button, Text, TextInput, text_input, Scrollable,
 use iced_native::{
     layout, Layout, Widget, Size, Length, MouseCursor, 
     Point, Font, HorizontalAlignment, VerticalAlignment, Background,
-    Hasher, input, Color, Event, Rectangle, Clipboard, Element
+    Hasher, input, Color, Event, Rectangle, Clipboard, Element, Align,
 };
 use iced_wgpu::{Renderer, Primitive, Defaults};
 
@@ -83,13 +83,13 @@ impl RangesScreen {
                 .rev()
                 .enumerate()
                 .fold(
-                    Column::new(), |column, (row_idx, row_card)| {
+                    Column::new().spacing(4), |column, (row_idx, row_card)| {
                         column.push(
                             Card::iterator()
                                 .rev()
                                 .enumerate()
                                 .fold(
-                                    Row::new().height(Length::Fill), |row, (col_idx, col_card)| {
+                                    Row::new().height(Length::Fill).spacing(4), |row, (col_idx, col_card)| {
                                         let suited = {
                                             if col_idx > row_idx { Suit::Suited }
                                             else { Suit::Off }
@@ -111,12 +111,20 @@ impl RangesScreen {
                 )
         } else {
             Column::new()
-                .push(Text::new("No range selected."))
+                .height(Length::Fill)
+                .width(Length::Fill)
+                .align_items(Align::Center)
+                .push(Text::new("No range selected.")
+                      .horizontal_alignment(HorizontalAlignment::Center)
+                      .vertical_alignment(VerticalAlignment::Center)
+                      .height(Length::Fill)
+                      .height(Length::Fill)
+                      )
         };
 
         let range_list = self.select_range_buttons
             .iter_mut()
-            .fold(Scrollable::new(&mut self.ranges_scrollable).height(Length::FillPortion(9)), |s, b| {
+            .fold(Scrollable::new(&mut self.ranges_scrollable).height(Length::FillPortion(9)).spacing(8), |s, b| {
                 s.push(
                     b.view()
                     )
@@ -124,6 +132,7 @@ impl RangesScreen {
 
         let range_controls = if let Some(active_range) = &self.active_range {
             Row::new()
+                .spacing(8)
                 .push(TextInput::new(
                         &mut self.current_range_name_state, 
                         "Range name",
@@ -151,13 +160,18 @@ impl RangesScreen {
             Row::new()
         };
             
-        let new_range_button = Button::new(&mut self.new_range_button, Text::new("New Range"))
+        let new_range_button = Button::new(&mut self.new_range_button, Text::new("New Range")
+                                           .horizontal_alignment(HorizontalAlignment::Center)
+                                           .vertical_alignment(VerticalAlignment::Center))
             .height(Length::FillPortion(1))
             .on_press(Message::CreateNewRange);
 
 
         Row::new() // master containewr
+            .spacing(8)
             .push(Column::new() // main column
+                  .spacing(8)
+                  .align_items(Align::Center)
                   .width(Length::FillPortion(2))
                   .push(Row::new()) // range info
                   .push(range_controls) 
