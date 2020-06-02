@@ -9,5 +9,6 @@ mod study_screen;
 mod messages;
 mod svg;
 mod questions;
+mod styles;
 
 pub use range_trainer::RangeTrainer;

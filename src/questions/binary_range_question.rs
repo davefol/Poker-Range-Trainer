@@ -1,19 +1,12 @@
-use iced::{
-    button, Row, Container, Column, Text, widget, Button,
-};
-use iced_native::{
-    Length, Align, VerticalAlignment, Element,
-};
+use iced::{button, widget, Button, Column, Container, Row, Text};
+use iced_native::{Align, Element, Length, VerticalAlignment};
 
-use crate::messages::{Message};
-use crate::study_screen::{StudyMessage};
-use crate::range::Range;
 use crate::hand::Hand;
-use crate::questions::{
-    QuestionState,
-    QuestionAnswer,
-    Question,
-};
+use crate::messages::Message;
+use crate::questions::{Question, QuestionAnswer, QuestionState};
+use crate::range::Range;
+use crate::study_screen::StudyMessage;
+use crate::styles;
 
 use rand::{seq::SliceRandom, Rng};
 
@@ -35,19 +28,17 @@ impl BinaryRangeQuestion {
         let hand: Hand = rng.gen();
         let (first_svg, second_svg) = <(&[u8], &[u8])>::from(hand);
         match ranges.choose(&mut rng) {
-            Some(range) => {
-                Self{
-                    range: range.clone(),
-                    hand: hand,
-                    state: QuestionState::Waiting,
-                    first_card_svg: first_svg,
-                    second_card_svg: second_svg,
-                    yes_button: button::State::new(),
-                    no_button: button::State::new(),
-                    next_button: button::State::new(),
-                }
-            }, 
-            None => unreachable!()
+            Some(range) => Self {
+                range: range.clone(),
+                hand: hand,
+                state: QuestionState::Waiting,
+                first_card_svg: first_svg,
+                second_card_svg: second_svg,
+                yes_button: button::State::new(),
+                no_button: button::State::new(),
+                next_button: button::State::new(),
+            },
+            None => unreachable!(),
         }
     }
 }
@@ -58,61 +49,88 @@ impl Question for BinaryRangeQuestion {
             .height(Length::Fill)
             .align_items(Align::Center)
             .push(
-                Container::new( 
+                Container::new(
                     Column::new()
                         .width(Length::Fill)
                         .align_items(Align::Center)
                         .spacing(100)
-                        .push(Text::new(self.range.name.to_string())
-                              .vertical_alignment(VerticalAlignment::Center))
-                        .push(Row::new()
-                            .spacing(8)
-                            .push(widget::svg::Svg::new(widget::svg::Handle::from_memory(self.first_card_svg)))
-                            .push(widget::svg::Svg::new(widget::svg::Handle::from_memory(self.second_card_svg)))
-                              )
                         .push(
-                            match self.state {
-                                QuestionState::Waiting => Element::from(Row::new()
-                                  .spacing(8)
-                                  .push(Button::new(&mut self.yes_button, Text::new("Yes"))
-                                        .on_press(Message::StudyScreen(StudyMessage::QuestionAnswer(QuestionAnswer::BinaryRangeQuestion(true))))
-                                        )
-                                  .push(Button::new(&mut self.no_button, Text::new("No"))
-                                        .on_press(Message::StudyScreen(StudyMessage::QuestionAnswer(QuestionAnswer::BinaryRangeQuestion(false))))
-                                        )),
-                                QuestionState::Correct => Element::from(Row::new()
-                                    .push(Button::new(&mut self.next_button, Text::new(format!("Correct")))
-                                          .on_press(Message::RequestNewQuestion)
-                                          )),
-                                QuestionState::Wrong => Element::from(Row::new()
-                                    .push(Button::new(&mut self.next_button, Text::new("Wrong"))
-                                          .on_press(Message::RequestNewQuestion)
-                                          )),
-                            }
+                            Text::new(self.range.name.to_string())
+                                .vertical_alignment(VerticalAlignment::Center),
                         )
-            )
+                        .push(
+                            Row::new()
+                                .spacing(8)
+                                .push(widget::svg::Svg::new(widget::svg::Handle::from_memory(
+                                    self.first_card_svg,
+                                )))
+                                .push(widget::svg::Svg::new(widget::svg::Handle::from_memory(
+                                    self.second_card_svg,
+                                ))),
+                        )
+                        .push(match self.state {
+                            QuestionState::Waiting => Element::from(
+                                Row::new()
+                                    .spacing(8)
+                                    .push(
+                                        Button::new(&mut self.yes_button, Text::new("Yes"))
+                                            .on_press(Message::StudyScreen(
+                                                StudyMessage::QuestionAnswer(
+                                                    QuestionAnswer::BinaryRangeQuestion(true),
+                                                ),
+                                            ))
+                                            .style(styles::Button::Basic),
+                                    )
+                                    .push(
+                                        Button::new(&mut self.no_button, Text::new("No"))
+                                            .on_press(Message::StudyScreen(
+                                                StudyMessage::QuestionAnswer(
+                                                    QuestionAnswer::BinaryRangeQuestion(false),
+                                                ),
+                                            ))
+                                            .style(styles::Button::Basic),
+                                    ),
+                            ),
+                            QuestionState::Correct => Element::from(
+                                Row::new().push(
+                                    Button::new(
+                                        &mut self.next_button,
+                                        Text::new(format!("Correct")),
+                                    )
+                                    .on_press(Message::RequestNewQuestion)
+                                    .style(styles::Button::Basic),
+                                ),
+                            ),
+                            QuestionState::Wrong => Element::from(
+                                Row::new().push(
+                                    Button::new(&mut self.next_button, Text::new("Wrong"))
+                                        .on_press(Message::RequestNewQuestion)
+                                        .style(styles::Button::Basic),
+                                ),
+                            ),
+                        }),
+                )
                 .center_x()
-                .center_y()
-        )
-        
+                .center_y(),
+            )
     }
     fn update(&mut self, message: QuestionAnswer) {
-       match message {
+        match message {
             QuestionAnswer::BinaryRangeQuestion(true) => {
                 if self.range.contains(&self.hand) {
                     self.state = QuestionState::Correct;
                 } else {
                     self.state = QuestionState::Wrong;
                 }
-            },
+            }
             QuestionAnswer::BinaryRangeQuestion(false) => {
                 if self.range.contains(&self.hand) {
                     self.state = QuestionState::Wrong;
                 } else {
                     self.state = QuestionState::Correct;
                 }
-            },
-            _ => unreachable!()
-       }
+            }
+            _ => unreachable!(),
+        }
     }
 }

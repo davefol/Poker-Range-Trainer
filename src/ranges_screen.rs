@@ -1,21 +1,21 @@
 use std::default::Default;
 
-use crate::messages::{
-    Message, RangesMessage
-};
 use crate::card::Card;
-use crate::hand::Suit;
-use crate::range::Range;
 use crate::hand::Hand;
+use crate::hand::Suit;
+use crate::messages::{Message, RangesMessage};
+use crate::range::Range;
+use crate::styles;
 
-use iced::{Column, Row, button, Button, Text, TextInput, text_input, Scrollable, scrollable,};
-use iced_native::{
-    layout, Layout, Widget, Size, Length, MouseCursor, 
-    Point, Font, HorizontalAlignment, VerticalAlignment, Background,
-    Hasher, input, Color, Event, Rectangle, Clipboard, Element, Align,
+use iced::{
+    button, scrollable, text_input, Button, Column, Container, Row, Scrollable, Text, TextInput,
 };
-use iced_wgpu::{Renderer, Primitive, Defaults};
-
+use iced_native::{
+    input, layout, Align, Background, Clipboard, Color, Element, Event, Font, Hasher,
+    HorizontalAlignment, Layout, Length, MouseCursor, Point, Rectangle, Size, VerticalAlignment,
+    Widget,
+};
+use iced_wgpu::{Defaults, Primitive, Renderer};
 
 pub struct SelectRangeButton {
     range_name: String,
@@ -25,12 +25,21 @@ pub struct SelectRangeButton {
 
 impl SelectRangeButton {
     fn new(range_id: usize, range_name: String) -> Self {
-        Self {range_name, range_id, button_state: button::State::new()}
+        Self {
+            range_name,
+            range_id,
+            button_state: button::State::new(),
+        }
     }
 
     fn view(&mut self) -> Button<Message> {
-        Button::new(&mut self.button_state, Text::new(self.range_name.to_string()))
-            .on_press(Message::RangeSelected(self.range_id))
+        Button::new(
+            &mut self.button_state,
+            Text::new(self.range_name.to_string()).horizontal_alignment(HorizontalAlignment::Left),
+        )
+        .on_press(Message::RangeSelected(self.range_id))
+        .width(Length::Fill)
+        .style(styles::Button::RangeList { selected: false })
     }
 }
 
@@ -38,7 +47,7 @@ impl SelectRangeButton {
 pub struct ActiveRange {
     pub id: usize,
     pub range: Range,
-    dirty: bool
+    dirty: bool,
 }
 
 impl From<ActiveRange> for Range {
@@ -47,11 +56,12 @@ impl From<ActiveRange> for Range {
     }
 }
 
-
 impl ActiveRange {
     pub fn new(id: usize, range: Range) -> Self {
         Self {
-            id, range, dirty: false
+            id,
+            range,
+            dirty: false,
         }
     }
 }
@@ -70,7 +80,9 @@ pub struct RangesScreen {
 
 impl RangesScreen {
     pub fn new() -> Self {
-        Self {..Default::default()}
+        Self {
+            ..Default::default()
+        }
     }
 
     pub fn set_range(&mut self, id: usize, range: Range) {
@@ -79,109 +91,117 @@ impl RangesScreen {
 
     pub fn view(&mut self) -> Row<Message> {
         let range_matrix = if let Some(active_range) = &mut self.active_range {
-            Card::iterator()
-                .rev()
-                .enumerate()
-                .fold(
-                    Column::new().spacing(4), |column, (row_idx, row_card)| {
-                        column.push(
-                            Card::iterator()
-                                .rev()
-                                .enumerate()
-                                .fold(
-                                    Row::new().height(Length::Fill).spacing(4), |row, (col_idx, col_card)| {
-                                        let suited = {
-                                            if col_idx > row_idx { Suit::Suited }
-                                            else { Suit::Off }
-                                        };
-                                        let first = Card::max(*row_card, *col_card);
-                                        let second = Card::min(*row_card, *col_card);
-                                        let hand = Hand {first, second, suited };
-                                        row.push(
-                                            HandToggle::<Message>::new(
-                                                active_range.range.contains(&hand),
-                                                hand,
-                                                |h| Message::RangesScreen(RangesMessage::ToggleHand(h))
-                                            )
-                                        )
-                                    }
-                                )
-                        )
-                    }
-                )
+            Card::iterator().rev().enumerate().fold(
+                Column::new().spacing(4),
+                |column, (row_idx, row_card)| {
+                    column.push(Card::iterator().rev().enumerate().fold(
+                        Row::new().height(Length::Fill).spacing(4),
+                        |row, (col_idx, col_card)| {
+                            let suited = {
+                                if col_idx > row_idx {
+                                    Suit::Suited
+                                } else {
+                                    Suit::Off
+                                }
+                            };
+                            let first = Card::max(*row_card, *col_card);
+                            let second = Card::min(*row_card, *col_card);
+                            let hand = Hand {
+                                first,
+                                second,
+                                suited,
+                            };
+                            row.push(HandToggle::<Message>::new(
+                                active_range.range.contains(&hand),
+                                hand,
+                                |h| Message::RangesScreen(RangesMessage::ToggleHand(h)),
+                            ))
+                        },
+                    ))
+                },
+            )
         } else {
             Column::new()
                 .height(Length::Fill)
                 .width(Length::Fill)
                 .align_items(Align::Center)
-                .push(Text::new("No range selected.")
-                      .horizontal_alignment(HorizontalAlignment::Center)
-                      .vertical_alignment(VerticalAlignment::Center)
-                      .height(Length::Fill)
-                      .height(Length::Fill)
-                      )
+                .push(
+                    Text::new("No range selected.")
+                        .horizontal_alignment(HorizontalAlignment::Center)
+                        .vertical_alignment(VerticalAlignment::Center)
+                        .height(Length::Fill)
+                        .height(Length::Fill),
+                )
         };
 
-        let range_list = self.select_range_buttons
-            .iter_mut()
-            .fold(Scrollable::new(&mut self.ranges_scrollable).height(Length::FillPortion(9)).spacing(8), |s, b| {
-                s.push(
-                    b.view()
-                    )
-        });
+        let range_list = Container::new(
+            self.select_range_buttons.iter_mut().fold(
+                Scrollable::new(&mut self.ranges_scrollable)
+                    .spacing(8),
+                |s, b| s.push(b.view()),
+            ),
+        )
+        .style(styles::Container::Basic)
+        .height(Length::FillPortion(9))
+        .padding(24);
 
         let range_controls = if let Some(active_range) = &self.active_range {
             Row::new()
                 .spacing(8)
                 .push(TextInput::new(
-                        &mut self.current_range_name_state, 
-                        "Range name",
-                        &active_range.range.name,
-                        |s| Message::RangesScreen(RangesMessage::RangeNameChanged(s))
-                        )
-                    )
-                .push(Text::new(if active_range.dirty {"*"} else {""}))
-                .push(Button::new(
-                        &mut self.save_current_range_button,
-                        Text::new("Save")
-                        ).on_press(Message::SaveRange(Some(active_range.clone())))
-                    )
-                .push(Button::new(
-                        &mut self.copy_current_range_button,
-                        Text::new("Copy")
-                        ).on_press(Message::CopyRange(Some(active_range.clone())))
-                    )
-                .push(Button::new(
-                        &mut self.delete_current_range_button,
-                        Text::new("Delete")
-                        ).on_press(Message::DeleteRange(Some(active_range.clone())))
-                    )
+                    &mut self.current_range_name_state,
+                    "Range name",
+                    &active_range.range.name,
+                    |s| Message::RangesScreen(RangesMessage::RangeNameChanged(s)),
+                ))
+                .push(Text::new(if active_range.dirty { "*" } else { "" }))
+                .push(
+                    Button::new(&mut self.save_current_range_button, Text::new("Save"))
+                        .on_press(Message::SaveRange(Some(active_range.clone())))
+                        .style(styles::Button::Basic),
+                )
+                .push(
+                    Button::new(&mut self.copy_current_range_button, Text::new("Copy"))
+                        .on_press(Message::CopyRange(Some(active_range.clone())))
+                        .style(styles::Button::Basic),
+                )
+                .push(
+                    Button::new(&mut self.delete_current_range_button, Text::new("Delete"))
+                        .on_press(Message::DeleteRange(Some(active_range.clone())))
+                        .style(styles::Button::Basic),
+                )
         } else {
             Row::new()
         };
-            
-        let new_range_button = Button::new(&mut self.new_range_button, Text::new("New Range")
-                                           .horizontal_alignment(HorizontalAlignment::Center)
-                                           .vertical_alignment(VerticalAlignment::Center))
-            .height(Length::FillPortion(1))
-            .on_press(Message::CreateNewRange);
 
+        let new_range_button = Button::new(
+            &mut self.new_range_button,
+            Text::new("New Range")
+                .horizontal_alignment(HorizontalAlignment::Center)
+                .vertical_alignment(VerticalAlignment::Center),
+        )
+        .height(Length::FillPortion(1))
+        .on_press(Message::CreateNewRange)
+        .style(styles::Button::Basic);
 
         Row::new() // master containewr
             .spacing(8)
-            .push(Column::new() // main column
-                  .spacing(8)
-                  .align_items(Align::Center)
-                  .width(Length::FillPortion(2))
-                  .push(Row::new()) // range info
-                  .push(range_controls) 
-                  .push(range_matrix)
-                  )
-            .push(Column::new() // side bar
-                  .width(Length::FillPortion(1))
-                  .push(range_list) // list of ranges
-                  .push(new_range_button) // new range button
-                  )
+            .push(
+                Column::new() // main column
+                    .spacing(8)
+                    .align_items(Align::Center)
+                    .width(Length::FillPortion(2))
+                    .push(Row::new()) // range info
+                    .push(range_controls)
+                    .push(range_matrix),
+            )
+            .push(
+                Column::new() // side bar
+                    .width(Length::FillPortion(1))
+                    .push(range_list) // list of ranges
+                    .push(new_range_button) // new range button
+                    .spacing(4),
+            )
     }
 
     pub fn update(&mut self, message: RangesMessage) {
@@ -191,19 +211,19 @@ impl RangesScreen {
                     active_range.range.toggle(hand);
                     active_range.dirty = true;
                 }
-            },
+            }
             RangesMessage::UpdateSelectRangeButtons(ranges) => {
                 self.select_range_buttons = ranges
                     .iter()
                     .enumerate()
-                    .map(|(i, r)| { SelectRangeButton::new(i, r.name.to_string()) })
+                    .map(|(i, r)| SelectRangeButton::new(i, r.name.to_string()))
                     .collect()
-            },
+            }
             RangesMessage::RangeNameChanged(new_name) => {
                 if let Some(active_range) = &mut self.active_range {
                     active_range.range.name = new_name;
                 }
-            },
+            }
             RangesMessage::RangesHaveBeenSaved => {
                 if let Some(active_range) = &mut self.active_range {
                     active_range.dirty = false;
@@ -213,34 +233,39 @@ impl RangesScreen {
     }
 }
 
-struct HandToggle <Message> {
-   is_active: bool,
-   on_toggle: Box<dyn Fn(Hand) -> Message>,
-   hand: Hand,
+struct HandToggle<Message> {
+    is_active: bool,
+    on_toggle: Box<dyn Fn(Hand) -> Message>,
+    hand: Hand,
 }
 
-impl <Message> HandToggle<Message> {
+impl<Message> HandToggle<Message> {
     pub fn new<F>(is_active: bool, hand: Hand, on_toggle: F) -> Self
-    where F: 'static + Fn(Hand) -> Message
+    where
+        F: 'static + Fn(Hand) -> Message,
     {
         Self {
             is_active,
             on_toggle: Box::new(on_toggle),
-            hand
+            hand,
         }
     }
 
     fn color(&self) -> Background {
         match self.is_active {
             true => Background::Color(Color::from_rgba8(136, 208, 247, 1.0)),
-            false => Background::Color(Color::WHITE)
+            false => Background::Color(Color::WHITE),
         }
     }
 }
 
-impl <Message> Widget<Message, Renderer> for HandToggle<Message> {
-    fn width(&self) -> Length { Length::Fill }
-    fn height(&self) -> Length { Length::Fill }
+impl<Message> Widget<Message, Renderer> for HandToggle<Message> {
+    fn width(&self) -> Length {
+        Length::Fill
+    }
+    fn height(&self) -> Length {
+        Length::Fill
+    }
     fn layout(&self, _renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
         let size = limits
             .height(Length::Fill)
@@ -250,17 +275,17 @@ impl <Message> Widget<Message, Renderer> for HandToggle<Message> {
     }
     fn draw(
         &self,
-        _renderer: &mut Renderer, 
-        defaults: &Defaults, 
-        layout: Layout<'_>, 
-        _cursor_position: Point
-        ) -> (Primitive, MouseCursor) {
+        _renderer: &mut Renderer,
+        defaults: &Defaults,
+        layout: Layout<'_>,
+        _cursor_position: Point,
+    ) -> (Primitive, MouseCursor) {
         let background = Primitive::Quad {
             bounds: layout.bounds(),
             background: self.color(),
             border_radius: 5,
             border_color: Color::BLACK,
-            border_width: 1
+            border_width: 1,
         };
         let hand_text = Primitive::Text {
             content: self.hand.to_string(),
@@ -276,21 +301,21 @@ impl <Message> Widget<Message, Renderer> for HandToggle<Message> {
             font: Font::Default,
             size: 20.0,
             horizontal_alignment: HorizontalAlignment::Center,
-            vertical_alignment: VerticalAlignment::Center
+            vertical_alignment: VerticalAlignment::Center,
         };
         (
             Primitive::Group {
-                primitives: vec![background, hand_text]
+                primitives: vec![background, hand_text],
             },
-            MouseCursor::Pointer
+            MouseCursor::Pointer,
         )
     }
-    
+
     fn hash_layout(&self, state: &mut Hasher) {
         use std::hash::Hash;
         self.is_active.hash(state)
     }
-    
+
     fn on_event(
         &mut self,
         event: Event,
@@ -298,7 +323,7 @@ impl <Message> Widget<Message, Renderer> for HandToggle<Message> {
         cursor_position: Point,
         messages: &mut Vec<Message>,
         _renderer: &Renderer,
-        _clipboard: Option<&dyn Clipboard>
+        _clipboard: Option<&dyn Clipboard>,
     ) {
         match event {
             Event::Mouse(input::mouse::Event::Input {
@@ -309,7 +334,7 @@ impl <Message> Widget<Message, Renderer> for HandToggle<Message> {
                 if mouse_over {
                     messages.push((self.on_toggle)(self.hand));
                 }
-            },
+            }
             _ => {}
         }
     }
