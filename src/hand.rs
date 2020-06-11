@@ -47,6 +47,21 @@ impl Hand {
 
         points
     }
+
+    pub fn all() -> Vec<Hand> {
+        let cards = vec![Card::Two, Card::Three, Card::Four, Card::Five, Card::Six, Card::Seven, Card::Eight,
+        Card::Nine, Card::Ten, Card::Jack, Card::Queen, Card::King, Card::Ace];
+        let mut hands: Vec<Hand> = vec![];
+        for first in (0..13).rev() {
+            for second in (0..first).rev() {
+                if first != second {
+                    hands.push(Hand{first: cards[first], second: cards[second], suited:Suit::Suited})
+                }
+                hands.push(Hand{first: cards[first], second: cards[second], suited:Suit::Off});
+            }
+        }
+        hands
+    }
 }
 
 impl From<Hand> for (&'static [u8], &'static[u8]) {
@@ -72,6 +87,7 @@ impl fmt::Display for Hand {
         }
     }
 }
+
 
 #[derive(Debug)]
 pub struct ParseHandError;

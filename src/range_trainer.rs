@@ -70,10 +70,10 @@ impl RangeTrainer {
 
         // binary range questions
         for range in self.ranges.iter() {
-            for hand in range.hands.iter() {
+            for hand in crate::hand::Hand::all().iter() {
                 let key = (
                     review::item::Presentation::TextHand(review::item::DisplayString::new(&range.name), *hand),
-                    review::item::Answer::Yes,
+                    if range.contains(hand) {review::item::Answer::Yes} else {review::item::Answer::No},
                 );
                 match self.review_items.get(&key) {
                     Some(review_item) => {
@@ -101,8 +101,8 @@ impl RangeTrainer {
         }
 
         // required fold equity questions
-        for bet in 2..=200 {
-            for pot in 3..=200 {
+        for bet in (2..=200).step_by(4) {
+            for pot in (3..=200).step_by(4) {
                 let key = (
                     review::item::Presentation::Text(
                         review::item::DisplayString(format!(
