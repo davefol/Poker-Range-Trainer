@@ -162,6 +162,22 @@ pub enum Answer {
     PokerAction(PokerAction),
 }
 
+impl Answer {
+    pub fn reveal(&self) -> String {
+        match self {
+            Answer::Yes => String::from("Yes"),
+            Answer::No => String::from("No"),
+            Answer::Text(s) => s.to_string(),
+            Answer::PokerAction(p) => match p {
+                PokerAction::Fold => String::from("Fold"),
+                PokerAction::Call => String::from("Call"),
+                PokerAction::Check => String::from("Check"),
+                PokerAction::Raise(r) => String::from(format!("Raise {} BB", r))
+            }
+        }
+    }
+}
+
 impl fmt::Display for Answer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

@@ -295,6 +295,7 @@ impl From<Card> for u8 {
     }
 }
 
+
 #[derive(Debug)]
 pub struct ParseCardError;
 impl FromStr for Card {

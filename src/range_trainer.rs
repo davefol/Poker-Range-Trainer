@@ -112,7 +112,7 @@ impl RangeTrainer {
                         )
                         .to_string()),
                     ),
-                    review::item::Answer::Text(review::item::DisplayString((bet / (bet + pot) * 100).to_string())),
+                    review::item::Answer::Text(review::item::DisplayString((bet as f32 / (bet as f32 + pot as f32) * 100.0).to_string())),
                 );
                 match self.review_items.get(&key) {
                     Some(review_item) => {
