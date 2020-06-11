@@ -7,7 +7,7 @@ use crate::card::Card;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Range {
     pub name: String,
-    hands: HashSet<Hand>
+    pub hands: HashSet<Hand>
 }
 
 impl Range {

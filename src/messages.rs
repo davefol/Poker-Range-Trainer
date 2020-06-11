@@ -1,7 +1,7 @@
 use crate::hand::Hand;
 use crate::range::Range;
 use crate::ranges_screen::ActiveRange;
-use crate::study_screen::StudyMessage;
+use crate::review;
 
 #[derive(Debug, Clone,)]
 pub enum Message {
@@ -14,8 +14,9 @@ pub enum Message {
     SaveRange(Option<ActiveRange>),
     CopyRange(Option<ActiveRange>),
     DeleteRange(Option<ActiveRange>),
-    StudyScreen(StudyMessage),
     RequestNewQuestion,
+    AnswerReviewItem(crate::range_trainer::ReviewItemsKey, review::item::Answer),
+    ReviewDisplayMessage(review::display::ReviewDisplayMessage),
 }
 
 #[derive(Debug, Clone)]

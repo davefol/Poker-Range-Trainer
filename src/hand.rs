@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use std::fmt;
 use rand::{
     distributions::{Distribution, Standard},
@@ -72,6 +73,42 @@ impl fmt::Display for Hand {
     }
 }
 
+#[derive(Debug)]
+pub struct ParseHandError;
+
+impl FromStr for Hand {
+    type Err = ParseHandError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let first_card = s.get(0..1).and_then(|x| x.parse::<Card>().ok());
+        let second_card = s.get(1..2).and_then(|x| x.parse::<Card>().ok());
+        let suit = s.get(2..3).and_then(|x| x.parse::<Suit>().ok());
+        if let (Some(first), Some(second)) = (first_card, second_card) {
+            if first == second && (suit.is_none() || suit == Some(Suit::Off)) {
+                Ok(Hand {
+                    first,
+                    second,
+                    suited: Suit::Off
+                })
+            } else if first != second {
+                if let Some(suited) = suit {
+                    Ok(Hand {
+                        first,
+                        second, 
+                        suited,
+                    })
+                } else {
+                    Err(ParseHandError)
+                }
+            } else {
+                Err(ParseHandError)
+            }
+        } else {
+            Err(ParseHandError)
+        }
+    }
+}
+
 impl Distribution<Hand> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Hand {
         let a: Card = rand::random();
@@ -104,5 +141,59 @@ impl fmt::Display for Suit {
             Suit::Suited => "s",
             Suit::Off => "o",
         })
+    }
+}
+
+
+#[derive(Debug)]
+pub struct ParseSuitError;
+impl FromStr for Suit {
+    type Err = ParseSuitError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "o" => Ok(Suit::Off),
+            "s" => Ok(Suit::Suited),
+            _ => Err(ParseSuitError)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use quickcheck::{Arbitrary, Gen};
+    use quickcheck_macros::quickcheck;
+
+    impl Arbitrary for super::Suit {
+        fn arbitrary<G: Gen>(g: &mut G) -> super::Suit {
+            let x = g.next_u32() % 2;
+            match x {
+               0 => super::Suit::Off,
+               1 => super::Suit::Suited,
+               _ => unreachable!()
+            }
+        }
+    }
+
+    impl Arbitrary for super::Hand {
+        fn arbitrary<G: Gen>(g: &mut G) -> super::Hand {
+            let first = crate::card::Card::arbitrary(g);
+            let second = crate::card::Card::arbitrary(g);
+            let suited = if first == second {super::Suit::Off} else {super::Suit::arbitrary(g)};
+            super::Hand {
+                first,
+                second,
+                suited,
+            }
+        }
+    }
+    
+    #[quickcheck]
+    fn parse_display_suit(suit: super::Suit) -> bool {
+        format!("{}", suit).parse::<super::Suit>().unwrap() == suit
+    }
+
+    #[quickcheck]
+    fn parse_display_hand(hand: super::Hand) -> bool {
+        format!("{}", hand).parse::<super::Hand>().unwrap() == hand
     }
 }

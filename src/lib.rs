@@ -8,7 +8,7 @@ mod ranges_screen;
 mod study_screen;
 mod messages;
 mod svg;
-mod questions;
 mod styles;
+mod review;
 
-pub use range_trainer::RangeTrainer;
+pub use crate::range_trainer::RangeTrainer;

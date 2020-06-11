@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use std::fmt;
 use std::slice::Iter;
 use std::ops::Sub;
@@ -294,6 +295,31 @@ impl From<Card> for u8 {
     }
 }
 
+#[derive(Debug)]
+pub struct ParseCardError;
+impl FromStr for Card {
+    type Err = ParseCardError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "2" => Ok(Card::Two),
+            "3" => Ok(Card::Three),
+            "4" => Ok(Card::Four),
+            "5" => Ok(Card::Five),
+            "6" => Ok(Card::Six),
+            "7" => Ok(Card::Seven),
+            "8" => Ok(Card::Eight),
+            "9" => Ok(Card::Nine),
+            "T" => Ok(Card::Ten),
+            "J" => Ok(Card::Jack),
+            "Q" => Ok(Card::Queen),
+            "K" => Ok(Card::King),
+            "A" => Ok(Card::Ace),
+            _ => Err(ParseCardError)
+        }
+    }
+}
+
 impl Distribution<Card> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Card {
         match rng.gen_range(2,15) {
@@ -314,3 +340,36 @@ impl Distribution<Card> for Standard {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use quickcheck_macros::quickcheck;
+    use quickcheck::{Arbitrary, Gen};
+
+    impl Arbitrary for super::Card {
+        fn arbitrary<G: Gen>(g: &mut G) -> super::Card {
+            let x = g.next_u32() % 13;
+            match x {
+                0 => super::Card::Two,
+                1 => super::Card::Three,
+                2 => super::Card::Four,
+                3 => super::Card::Five,
+                4 => super::Card::Six,
+                5 => super::Card::Seven,
+                6 => super::Card::Eight,
+                7 => super::Card::Nine,
+                8 => super::Card::Ten,
+                9 => super::Card::Jack,
+                10 => super::Card::Queen,
+                11 => super::Card::King,
+                12 => super::Card::Ace,
+                _ => unreachable!()
+            }
+        }
+    }
+    
+
+    #[quickcheck]
+    fn parse_display_card(card: super::Card) -> bool {
+        format!("{}", card).parse::<super::Card>().unwrap() == card
+    }
+}

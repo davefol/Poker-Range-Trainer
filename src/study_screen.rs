@@ -1,63 +1,29 @@
-use rand::Rng;
+use crate::messages::Message;
 
-use crate::messages::{
-    Message
-};
-use crate::range::Range;
+use crate::review;
 
-use crate::questions::{
-    QuestionWrapper, BinaryRangeQuestion, QuestionAnswer, Question, FoldEquity,
-};
-
-
-use iced::{Text, Row};
-
-#[derive(Debug, Clone)]
-pub enum StudyMessage {
-    QuestionAnswer(QuestionAnswer),
-}
+use iced::{Container, Text};
 
 pub struct StudyScreen {
-    question: Option<QuestionWrapper>,
+    review_display: Option<review::display::ReviewDisplay>,
 }
 
 impl StudyScreen {
-    pub fn new(ranges: &Vec<Range>) -> Self {
-        let question_choice = rand::thread_rng().gen_range(0,2);
-        let question = match question_choice {
-            0 => Some(QuestionWrapper::BinaryRangeQuestion(BinaryRangeQuestion::new(ranges))),
-            1 => Some(QuestionWrapper::FoldEquity(FoldEquity::new())),
-            _ => unreachable!()
-        };
-        Self {
-            question: question,
+    pub fn new(review_display: Option<review::display::ReviewDisplay>) -> Self {
+        Self { review_display }
+    }
+
+    pub fn view(&mut self) -> Container<Message> {
+        match &mut self.review_display {
+            Some(review_display) => review_display.view(),
+            None => Container::new(Text::new("No available questions.")),
         }
     }
 
-    pub fn view(&mut self) -> Row<Message> {
-        match &mut self.question {
-            Some(question) => question.view(),
-            None => Row::new().push(Text::new("No available questions."))
+    pub fn update(&mut self, message: review::display::ReviewDisplayMessage) {
+        match &mut self.review_display {
+            Some(review_display) => review_display.update(message),
+            None => {}
         }
-    }
-
-    pub fn update(&mut self, message: StudyMessage) {
-        match message {
-            StudyMessage::QuestionAnswer(m) => {
-                if let Some(q) = &mut self.question {
-                    q.update(m);
-                }
-            },
-        }
-    }
-
-    pub fn new_question(&mut self, ranges: &Vec<Range>) {
-        let question_choice = rand::thread_rng().gen_range(0,2);
-        let question = match question_choice {
-            0 => Some(QuestionWrapper::BinaryRangeQuestion(BinaryRangeQuestion::new(ranges))),
-            1 => Some(QuestionWrapper::FoldEquity(FoldEquity::new())),
-            _ => unreachable!()
-        };
-        self.question = question; 
     }
 }

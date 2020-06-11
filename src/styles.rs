@@ -6,7 +6,6 @@ const LIGHT_GREY: Color = Color{r: 0.75, g: 0.75, b: 0.75, a: 1.0};
 pub enum Button {
     Toolbar,
     RangeList { selected: bool },
-    NewRange,
     Basic,
 }
 
@@ -24,13 +23,6 @@ impl button::StyleSheet for Button {
                 border_width: 1,
                 border_radius: 4,
                 background: if *selected {Some(Background::Color(LIGHT_GREY))} else {None},
-                ..button::Style::default()
-            },
-            Button::NewRange => button::Style {
-                border_color: DARK_GREY,
-                border_width: 1,
-                border_radius: 0,
-                background: None,
                 ..button::Style::default()
             },
             Button::Basic => button::Style {
